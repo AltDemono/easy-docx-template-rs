@@ -1,0 +1,10 @@
+[package]
+name = "easy-docx-template"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+zip = "0.6"
+quick-xml = "0.31"
+log = "0.4.28"
+serde_json = "1.0.145"
