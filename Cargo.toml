@@ -4,9 +4,8 @@ version = "0.1.0"
 edition = "2024"
 description = "create docx template"
 license = "MIT"
-homepage = ""
+homepage = "https://github.com/AltDemono/easy-docx-template-rs"
 repository = "https://github.com/AltDemono/easy-docx-template-rs"
-documentation = ""
 categories = ["template-engine"]
 keywords = ["Docx", "Word", "Template", "Placeholders"]
 
