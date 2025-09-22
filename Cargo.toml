@@ -8,6 +8,7 @@ homepage = "https://github.com/AltDemono/easy-docx-template-rs"
 repository = "https://github.com/AltDemono/easy-docx-template-rs"
 categories = ["template-engine"]
 keywords = ["Docx", "Word", "Template", "Placeholders"]
+exclude = [ "imgs/*", "example/*", "output.docx" ]
 
 [dependencies]
 zip = "0.6"
