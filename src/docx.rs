@@ -2,12 +2,6 @@ use std::collections::HashMap;
 use serde_json::Value;
 use crate::utils::*;
 
-const PLACEHOLDER_START: &str = "{{";
-const PLACEHOLDER_END: &str = "}}";
-static WORD_PARAGRAPH_TAG: &[u8] = b"w:p";
-const PLACEHOLDER_BLOCK_START: &str = "{%";
-const PLACEHOLDER_BLOCK_END: &str = "%}";
-
 /// # DOCX struct
 ///
 /// create template for docx file
@@ -20,7 +14,7 @@ const PLACEHOLDER_BLOCK_END: &str = "%}";
 pub struct DOCX {
     pub content: HashMap<String, String>,
     pub file_name: String,
-    pub placeholders: HashMap<String, String>,
+    pub placeholders: HashMap<String, Value>,
     pub placeholders_blocks: HashMap<String, String>,
     pub placeholder_images: HashMap<String, String>,
 }
@@ -49,17 +43,17 @@ impl DOCX {
     /// `placeholder` - Placeholder
     ///
     /// `replaced_content` - value for placeholder
-    pub fn add_placeholder(&mut self, placeholder: &str, replaced_content: &str) {
-        self.placeholders.insert(placeholder.to_string(), replaced_content.to_string());
+    pub fn add_placeholder<T>(&mut self, placeholder: &str, replaced_content: T) where Value: From<T> {
+        self.placeholders.insert(placeholder.to_string(), Value::from(replaced_content));
     }
 
     /// Add placeholders from json
     ///
     /// `placeholders_content` - json data
-    pub fn add_placeholders_from_json<T: ToString + std::fmt::Display + From<String>>(&mut self, placeholders_content: &str) {
+    pub fn add_placeholders_from_json<T: ToString + std::fmt::Display>(&mut self, placeholders_content: &str) {
         let v: Value = serde_json::from_str(placeholders_content).unwrap();
         if let Value::Object(map) = v {
-            process_json_map::<T>(self,"", &map);
+            process_json_map(self,"", &map);
         }
     }
 
@@ -83,9 +77,9 @@ impl DOCX {
     /// Init placeholders
     pub fn init_placeholders(&mut self) {
         let mut new_content = HashMap::new();
-
+        self.placeholders = add_placeholder_helpers(&mut self.placeholders);
         for (k, v) in &self.content {
-            new_content.insert(k.to_string(), init_placeholders(&self.placeholders, v));
+            new_content.insert(k.to_string(), init_placeholders(&mut self.placeholders, v));
         }
 
         self.content = new_content;

@@ -6,6 +6,16 @@ Create docx templates
 ## ⚡Install to your project
 `cargo add easy-docx-template`
 
+## Changelog 0.1.3v
+* Added lower, upper and len placeholder helpers
+* Code refactoring
+## Placeholder Helpers
+`get array len: {{#exam.nums}} -> 3`
+
+`set lowercase for text: {{lower exam.title}} -> "math exam"`
+
+`set uppercase for text: {{upper exam.title}} -> "MATH EXAM"`
+
 ## Usage/Examples
 
 Example 1:
@@ -18,10 +28,12 @@ fn main()  {
     docx.read();
 
     // 2. Adding placeholders
-    docx.add_placeholder("{{exam.title}}", "Mathexam");
+    docx.add_placeholder("{{exam.title}}", "Math exam");
     docx.add_placeholder("{{exam.variant}}", "1 variant");
     docx.add_placeholder("{{exam.subject}}", "Math");
     docx.add_placeholder("{{exam.level}}", "1-A form");
+    docx.add_placeholder("{{exam.image_subtitle}}", "Hello world!");
+    docx.add_placeholder("{{exam.nums}}",vec!["1", "2", "3"]);
 
     // 3. Init placeholders
     docx.init_placeholders();
@@ -44,13 +56,15 @@ fn main() {
 
     // 2. Adding placeholders
     docx.add_placeholders_from_json::<String>(r#"{
-       "exam": {
-             "level": "form 2-A",
-             "variant": "1 variant",
-             "title": "Math exam",
-             "subject": "math"
-           }
-        }"#);
+            "exam": {
+                    "level": "form 2-A",
+                    "variant": "1 variant",
+                    "title": "Math exam",
+                    "subject": "math",
+                    "image_subtitle": "Hello world!",
+                    "nums": ["1", "2"]
+                }
+            }"#);
 
     // 3. Init placeholders
     docx.init_placeholders();
@@ -69,19 +83,21 @@ use easy_docx_template::DOCX;
 
 fn test_1() {
         // 1. Loading docx file
-        let mut docx = DOCX::new("example/test.docx".to_string());
+        let mut docx: DOCX = DOCX::new("example/test.docx".to_string());
         docx.read();
 
         // 2. Adding placeholders
         docx.add_placeholders_from_json::<String>(r#"{
-        "exam": {
-                "level": "form 2-A",
-                "variant": "1 variant",
-                "title": "Math exam",
-                "subject": "math"
-            }
-        }"#);
-        
+            "exam": {
+                    "level": "form 2-A",
+                    "variant": "1 variant",
+                    "title": "Math exam",
+                    "subject": "math",
+                    "image_subtitle": "Hello world!",
+                    "nums": ["1", "2"]
+                }
+            }"#);
+
         // 4. Add image placeholder
         docx.add_image_placeholder("image1.jpeg", "example/replace_image1.png");
 

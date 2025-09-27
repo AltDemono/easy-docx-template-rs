@@ -3,10 +3,11 @@ use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Write};
 use quick_xml::events::{BytesText, Event};
 use quick_xml::Writer;
-use serde_json::{value, Value};
+use serde_json::{Value};
 use zip::{ZipArchive, ZipWriter};
 use zip::write::FileOptions;
 use crate::DOCX;
+use crate::placeholder_helpers::{len_helper, lower_helper, upper_helper};
 
 const PLACEHOLDER_START: &str = "{{";
 const PLACEHOLDER_END: &str = "}}";
@@ -34,21 +35,23 @@ pub fn read_raw_docx(path: &str) -> HashMap<String, String> {
     hashmap
 }
 
-pub fn process_text<'a, T: ToString + std::fmt::Display>(placeholders: &HashMap<String, T>, text: &'a mut String) -> &'a String {
+pub fn process_text(placeholders: &HashMap<String, Value>, text: &mut String) -> String {
     for (placeholder, value) in placeholders {
-        *text = text.replace(placeholder, value.to_string().as_str());
+        let replacement = match value {
+            Value::String(s) => s.clone(),
+            _ => value.to_string(),
+        };
+        *text = text.replace(placeholder, &*replacement);
     }
 
-    text
+    text.to_string()
 }
 
-pub fn process_json_map<T>(
+pub fn process_json_map(
     docx: &mut DOCX,
     prefix: &str,
     map: &serde_json::Map<String, Value>,
 )
-where
-    T: From<String>, T: std::fmt::Display
 {
     for (k, v) in map {
         let full_key = if prefix.is_empty() {
@@ -61,23 +64,26 @@ where
 
         match v {
             Value::String(s) => {
-                docx.add_placeholder(&placeholder, &*s.clone());
+                docx.add_placeholder(&placeholder, Value::from(&*s.clone()));
             }
             Value::Number(n) => {
-                docx.add_placeholder(&placeholder, &*n.to_string());
+                docx.add_placeholder(&placeholder, Value::from(&*n.to_string()));
             }
             Value::Bool(b) => {
-                docx.add_placeholder(&placeholder, &*b.to_string());
+                docx.add_placeholder(&placeholder, Value::from(&*b.to_string()));
+            }
+            Value::Array(a) => {
+                docx.add_placeholder(&placeholder, Value::from(a.clone()));
             }
             Value::Object(obj) => {
-                process_json_map::<T>(docx, &full_key, obj);
+                process_json_map(docx, &full_key, obj);
             }
             _ => {}
         }
     }
 }
 
-
+/// Rendering output docx file
 pub fn render_docx(docx: &DOCX) -> Vec<u8> {
     let media_dir = "word/media/";
 
@@ -118,14 +124,28 @@ pub fn render_docx(docx: &DOCX) -> Vec<u8> {
     cursor.into_inner()
 }
 
-pub fn init_placeholders(placeholders: &HashMap<String, String>, content: &String) -> String {
+/// Adding basic placeholder helpers
+pub fn add_placeholder_helpers(placeholders: &mut HashMap<String, Value>) -> HashMap<String, Value> {
+    for (placeholder, value) in placeholders.clone() {
+        let len_placeholder = placeholder.replace("{{", "{{#");
+        placeholders.insert(len_placeholder.clone(), Value::from(len_helper(value.clone())));
+
+        let lower_placeholder = placeholder.replace("{{", "{{lower ");
+        placeholders.insert(lower_placeholder, Value::from(lower_helper(value.clone())));
+
+        let upper_placeholder = placeholder.replace("{{", "{{upper ");
+        placeholders.insert(upper_placeholder, Value::from(upper_helper(value.clone())));
+    }
+    placeholders.clone()
+}
+
+pub fn init_placeholders(placeholders: &mut HashMap<String, Value>, content: &String) -> String {
     let mut xml_writer = Writer::new(Cursor::new(Vec::new()));
     let mut reader = quick_xml::Reader::from_str(&*content);
     reader.trim_text(false);
     let mut buf = Vec::new();
 
     let mut current_placeholder = String::new();
-
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(e)) => {

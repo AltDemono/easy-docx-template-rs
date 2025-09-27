@@ -1,5 +1,6 @@
 mod docx;
 mod utils;
+mod placeholder_helpers;
 
 pub use docx::*;
 
@@ -19,7 +20,9 @@ mod tests {
                 "level": "form 2-A",
                 "variant": "1 variant",
                 "title": "Math exam",
-                "subject": "math"
+                "subject": "math",
+                "image_subtitle": "Hello world!",
+                "nums": ["1", "2"]
             }
         }"#);
         
@@ -45,12 +48,16 @@ mod tests {
         docx.add_placeholder("{{exam.variant}}", "1 variant");
         docx.add_placeholder("{{exam.subject}}", "Math");
         docx.add_placeholder("{{exam.level}}", "1-A form");
-        docx.add_placeholder("{{example}}", "Hello world!");
+        docx.add_placeholder("{{exam.image_subtitle}}", "Hello world!");
+        docx.add_placeholder("{{exam.nums}}",vec!["1", "2", "3"]);
 
-        // 3. Init placeholders
+        // 3. Add image placeholder
+        docx.add_image_placeholder("image1.jpeg", "example/replace_image1.png");
+
+        // 4. Init placeholders
         docx.init_placeholders();
 
-        // 4. Save our docx file
+        // 5. Save our docx file
         docx.save("output.docx");
         println!("✅ File saved: output.docx")
     }
