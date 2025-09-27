@@ -3,11 +3,15 @@
 
 Create docx templates
 
+## ⚡Install to your project
+`cargo add easy-docx-template`
 
 ## Usage/Examples
 
 Example 1:
 ```Rust
+use easy_docx_template::DOCX;
+
 fn main()  {
     // 1. Loading docx file
     let mut docx = DOCX::new("example/test.docx".to_string());
@@ -31,13 +35,15 @@ fn main()  {
 Example 2(Loading data from json):
 
 ```Rust
+use easy_docx_template::DOCX;
+
 fn main() {
     // 1. Loading docx file
     let mut docx = DOCX::new("example/test.docx".to_string());
     docx.read();
 
     // 2. Adding placeholders
-    docx.add_placeholders_from_json(r#"{
+    docx.add_placeholders_from_json::<String>(r#"{
        "exam": {
              "level": "form 2-A",
              "variant": "1 variant",
@@ -54,18 +60,20 @@ fn main() {
     println!("✅ File saved: output.docx")
 }
 ```
-#### Warning! Image placeholders are initialized when the final file is saved.
+#### 🚨Warning! Image placeholders are initialized when the final file is saved.
 
 Example 3(Add image placeholder)
 
 ```Rust
+use easy_docx_template::DOCX;
+
 fn test_1() {
         // 1. Loading docx file
         let mut docx = DOCX::new("example/test.docx".to_string());
         docx.read();
 
         // 2. Adding placeholders
-        docx.add_placeholders_from_json(r#"{
+        docx.add_placeholders_from_json::<String>(r#"{
         "exam": {
                 "level": "form 2-A",
                 "variant": "1 variant",
@@ -88,7 +96,7 @@ fn test_1() {
 
 ![example1](/imgs/example1.png)
 
-# Roadmap
+# 🚧 Roadmap
 
 - Add block constructions
 - optimize
