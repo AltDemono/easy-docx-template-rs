@@ -6,8 +6,8 @@ Create docx templates
 ## ⚡Install to your project
 `cargo add easy-docx-template`
 
-## Changelog 0.1.3v
-* Added lower, upper and len placeholder helpers
+## Changelog 0.1.4v
+* Added each blocks
 * Code refactoring
 ## Placeholder Helpers
 `get array len: {{#exam.nums}} -> 3`
@@ -16,6 +16,20 @@ Create docx templates
 
 `set uppercase for text: {{upper exam.title}} -> "MATH EXAM"`
 
+## Each block
+```
+{{#each exam.users}}
+
+{{first}} {{last}}
+
+{{/each}}
+
+ |
+\ /
+
+Ivan Ivanov
+Petr Petrov
+```
 ## Usage/Examples
 
 Example 1:

@@ -50,7 +50,7 @@ impl DOCX {
     /// Add placeholders from json
     ///
     /// `placeholders_content` - json data
-    pub fn add_placeholders_from_json<T: ToString + std::fmt::Display>(&mut self, placeholders_content: &str) {
+    pub fn add_placeholders_from_json(&mut self, placeholders_content: &str) {
         let v: Value = serde_json::from_str(placeholders_content).unwrap();
         if let Value::Object(map) = v {
             process_json_map(self,"", &map);
@@ -81,7 +81,9 @@ impl DOCX {
         for (k, v) in &self.content {
             new_content.insert(k.to_string(), init_placeholders(&mut self.placeholders, v));
         }
-
+        let rendered = init_each_placeholders((&*new_content["word/document.xml"].clone()).parse().unwrap(), &mut self.placeholders);
+        new_content.remove("word/document.xml");
+        new_content.insert("word/document.xml".parse().unwrap(), rendered);
         self.content = new_content;
     }
 

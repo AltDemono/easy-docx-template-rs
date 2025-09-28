@@ -15,14 +15,18 @@ mod tests {
         docx.read();
 
         // 2. Adding placeholders
-        docx.add_placeholders_from_json::<String>(r#"{
+        docx.add_placeholders_from_json(r#"{
         "exam": {
                 "level": "form 2-A",
                 "variant": "1 variant",
                 "title": "Math exam",
                 "subject": "math",
                 "image_subtitle": "Hello world!",
-                "nums": ["1", "2"]
+                "users": [
+                    { "first": "Ivan", "last": "Ivanov" },
+                    { "first": "Petr", "last": "Petrov" }
+                ],
+                "down": "made with love"
             }
         }"#);
         
@@ -49,7 +53,7 @@ mod tests {
         docx.add_placeholder("{{exam.subject}}", "Math");
         docx.add_placeholder("{{exam.level}}", "1-A form");
         docx.add_placeholder("{{exam.image_subtitle}}", "Hello world!");
-        docx.add_placeholder("{{exam.nums}}",vec!["1", "2", "3"]);
+        docx.add_placeholder("{{exam.down}}", "made with love");
 
         // 3. Add image placeholder
         docx.add_image_placeholder("image1.jpeg", "example/replace_image1.png");
@@ -58,6 +62,32 @@ mod tests {
         docx.init_placeholders();
 
         // 5. Save our docx file
+        docx.save("output.docx");
+        println!("✅ File saved: output.docx")
+    }
+
+    #[test]
+    fn test_with_each_blocks() {
+        let mut docx: DOCX = DOCX::new("example/test.docx".to_string());
+        docx.read();
+        docx.add_placeholders_from_json(r#"{
+        "exam": {
+                "level": "form 2-A",
+                "variant": "1 variant",
+                "title": "Math exam",
+                "subject": "math",
+                "image_subtitle": "Hello world!",
+                "users": [
+                    { "first": "Ivan", "last": "Ivanov" },
+                    { "first": "Petr", "last": "Petrov" }
+                ],
+                "down": "made with love"
+            }
+        }"#);
+        // 5. Init placeholders
+        docx.init_placeholders();
+
+        // 6. Save our docx file
         docx.save("output.docx");
         println!("✅ File saved: output.docx")
     }

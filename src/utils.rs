@@ -6,6 +6,8 @@ use quick_xml::Writer;
 use serde_json::{Value};
 use zip::{ZipArchive, ZipWriter};
 use zip::write::FileOptions;
+use regex::Regex;
+// Crate
 use crate::DOCX;
 use crate::placeholder_helpers::{len_helper, lower_helper, upper_helper};
 
@@ -149,7 +151,7 @@ pub fn init_placeholders(placeholders: &mut HashMap<String, Value>, content: &St
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(e)) => {
-                xml_writer.write_event(Event::Start(e)).unwrap();
+                xml_writer.write_event(Event::Start(e.clone())).unwrap();
             }
             Ok(Event::Text(e)) => {
                 let mut text = e.unescape().unwrap().into_owned();
@@ -186,4 +188,100 @@ pub fn init_placeholders(placeholders: &mut HashMap<String, Value>, content: &St
     let result = xml_writer.into_inner().into_inner();
     let result_str = String::from_utf8(result).unwrap();
     result_str
+}
+
+
+
+pub fn remove_paragraph_with_placeholder(xml_content: &str, placeholder: &str) -> String {
+    let re = Regex::new(r"<w:p[\s\S]*?</w:p>").unwrap();
+
+    re.replace_all(xml_content, |caps: &regex::Captures| {
+        let paragraph = &caps[0];
+
+        let text_only = Regex::new(r"<[^>]+>").unwrap().replace_all(paragraph, "");
+
+        if text_only.contains(placeholder) {
+            "".to_string()
+        } else {
+            paragraph.to_string()
+        }
+    }).to_string()
+}
+
+pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<String, Value>) -> String {
+    let mut in_for: bool = false;
+    let mut in_block_content: String = String::new();
+    let mut variable: Value = Value::Array(Vec::new());
+    let mut output = String::new();
+
+    let blocked_symbols = vec!['<', '>', '{', '}'];
+    let mut count: usize = 0;
+    let mut placeholder_value: String = String::new();
+    let mut is_open: bool = false;
+    let mut placeholder_start = String::new();
+
+    for letter in xml_content.chars() {
+        if count == 2 {
+            if !blocked_symbols.contains(&letter) && is_open {
+                placeholder_value.push(letter);
+            }
+        } else if count == 0 && placeholder_value.ends_with("}}") {
+            if placeholder_value.contains("{}") {
+                placeholder_value = placeholder_value.replace("{}", "");
+            }
+            if placeholder_value.starts_with("{{#each ") {
+                placeholder_start = placeholder_value.clone();
+                let var_name = placeholder_value.replace("#each ", "");
+                if !placeholders.contains_key(&var_name) {
+                    return xml_content
+                }
+                variable = placeholders[&var_name].clone();
+                in_for = true;
+                in_block_content.clear();
+            } else if placeholder_value.starts_with("{{/each") {
+                in_for = false;
+
+                if variable.is_array() {
+                    if let Some(arr) = variable.as_array() {
+                        for item in arr {
+                            let mut block_copy = in_block_content.clone();
+                            if let Some(map) = item.as_object() {
+                                for (k, v) in map {
+                                    let ph = format!("{{{{{}}}}}", k);
+                                    block_copy = block_copy.replace(&ph, &v.to_string().replace('"', ""));
+                                }
+                            }
+                            output.push_str(&block_copy);
+                        }
+                    }
+                }
+                in_block_content.clear();
+            }
+            placeholder_value.clear();
+        }
+
+        if in_for {
+            in_block_content.push(letter);
+        } else {
+            output.push(letter);
+        }
+
+        match letter {
+            '{' => {
+                count += 1;
+                placeholder_value.push(letter);
+            }
+            '}' => {
+                count -= 1;
+                placeholder_value.push(letter);
+            }
+            '<' => is_open = false,
+            '>' => is_open = true,
+            _ => {}
+        }
+    }
+
+    output = remove_paragraph_with_placeholder(&output, placeholder_start.as_str());
+    output = remove_paragraph_with_placeholder(&output, "{{/each}}");
+    output
 }
