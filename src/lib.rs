@@ -35,7 +35,6 @@ mod tests {
 
         // 5. Init placeholders
         docx.init_placeholders();
-        println!("{:?}", docx.content);
 
         // 6. Save our docx file
         docx.save("output.docx");

@@ -160,6 +160,7 @@ pub fn init_placeholders(placeholders: &mut HashMap<String, Value>, content: &St
                     current_placeholder.push_str(&text);
 
                     if current_placeholder.contains(PLACEHOLDER_START) && current_placeholder.contains(PLACEHOLDER_END) {
+                        process_text(placeholders, &mut current_placeholder);
 
                         xml_writer.write_event(Event::Text(BytesText::new(&current_placeholder))).unwrap();
                         current_placeholder.clear();
@@ -238,7 +239,6 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
                 in_for = true;
                 in_block_content.clear();
             } else if placeholder_value.starts_with("{{/each") {
-                println!("each cycle closed");
                 in_for = false;
 
                 if variable.is_array() {
