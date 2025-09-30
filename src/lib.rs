@@ -26,7 +26,8 @@ mod tests {
                     { "first": "Ivan", "last": "Ivanov" },
                     { "first": "Petr", "last": "Petrov" }
                 ],
-                "down": "made with love"
+                "down": "made with love",
+                "test1": "2424"
             }
         }"#);
         

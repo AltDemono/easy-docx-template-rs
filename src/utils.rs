@@ -288,5 +288,10 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
 
     output = remove_paragraph_with_placeholder(&output, placeholder_start.as_str());
     output = remove_paragraph_with_placeholder(&output, "{{/each}}");
-    output
+    if output.is_empty()
+    {
+     xml_content
+    } else {
+        output
+    }
 }
