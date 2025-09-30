@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use serde_json::Value;
+use serde_json::{to_string, Value};
 use crate::utils::*;
 
 /// # DOCX struct
@@ -78,12 +78,11 @@ impl DOCX {
     pub fn init_placeholders(&mut self) {
         let mut new_content = HashMap::new();
         self.placeholders = add_placeholder_helpers(&mut self.placeholders);
+        let rendered = init_each_placeholders(self.content["word/document.xml"].clone(), &mut self.placeholders);
+        let _ = self.content["word/document.xml"].replace(&self.content["word/document.xml"], &*rendered);
         for (k, v) in &self.content {
             new_content.insert(k.to_string(), init_placeholders(&mut self.placeholders, v));
         }
-        let rendered = init_each_placeholders((&*new_content["word/document.xml"].clone()).parse().unwrap(), &mut self.placeholders);
-        new_content.remove("word/document.xml");
-        new_content.insert("word/document.xml".parse().unwrap(), rendered);
         self.content = new_content;
     }
 
