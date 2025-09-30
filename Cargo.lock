@@ -159,7 +159,7 @@ dependencies = [
 
 [[package]]
 name = "easy-docx-template"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "quick-xml",
  "regex",

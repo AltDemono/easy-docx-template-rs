@@ -239,19 +239,25 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
                 in_for = true;
                 in_block_content.clear();
             } else if placeholder_value.starts_with("{{/each") {
+                println!("each cycle closed");
                 in_for = false;
 
                 if variable.is_array() {
                     if let Some(arr) = variable.as_array() {
+                        let mut current_index = 1;
                         for item in arr {
                             let mut block_copy = in_block_content.clone();
+                            let mut block_placeholders: HashMap<String, Value> = HashMap::new();
+                            block_placeholders.insert("{{@index}}".to_string(), Value::from(current_index));
                             if let Some(map) = item.as_object() {
                                 for (k, v) in map {
                                     let ph = format!("{{{{{}}}}}", k);
                                     block_copy = block_copy.replace(&ph, &v.to_string().replace('"', ""));
                                 }
                             }
+                            block_copy = block_copy.replace("{{@index}}", format!("{}", current_index).as_str());
                             output.push_str(&block_copy);
+                            current_index += 1;
                         }
                     }
                 }

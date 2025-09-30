@@ -6,9 +6,8 @@ Create docx templates
 ## ⚡Install to your project
 `cargo add easy-docx-template`
 
-## Changelog 0.1.4v
-* Added each blocks
-* Code refactoring
+## Changelog 0.1.5v
+* Added @index placeholder to each blocks
 ## Placeholder Helpers
 `get array len: {{#exam.nums}} -> 3`
 
@@ -20,15 +19,15 @@ Create docx templates
 ```
 {{#each exam.users}}
 
-{{first}} {{last}}
+{{@index}}: {{first}} {{last}}
 
 {{/each}}
 
  |
 \ /
 
-Ivan Ivanov
-Petr Petrov
+1: Ivan Ivanov
+2: Petr Petrov
 ```
 ## Usage/Examples
 
@@ -108,7 +107,11 @@ fn test_1() {
                     "title": "Math exam",
                     "subject": "math",
                     "image_subtitle": "Hello world!",
-                    "nums": ["1", "2"]
+                    "nums": ["1", "2"],
+                    "users": [
+                        { "first": "Ivan", "last": "Ivanov" },
+                        { "first": "Petr", "last": "Petrov" }
+                    ],
                 }
             }"#);
 
@@ -127,8 +130,6 @@ fn test_1() {
 ![example1](/imgs/example1.png)
 
 # 🚧 Roadmap
-
-- Add block constructions
 - optimize
 - Add list and table support
 
