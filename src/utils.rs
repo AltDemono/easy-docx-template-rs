@@ -160,7 +160,6 @@ pub fn init_placeholders(placeholders: &mut HashMap<String, Value>, content: &St
                     current_placeholder.push_str(&text);
 
                     if current_placeholder.contains(PLACEHOLDER_START) && current_placeholder.contains(PLACEHOLDER_END) {
-                        println!("{}", process_text(placeholders, &mut current_placeholder));
 
                         xml_writer.write_event(Event::Text(BytesText::new(&current_placeholder))).unwrap();
                         current_placeholder.clear();
