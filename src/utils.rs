@@ -230,7 +230,7 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
                 placeholder_value = placeholder_value.replace("{}", "");
             }
             if placeholder_value.starts_with("{{#each ") {
-                placeholder_start = placeholder_value.clone();
+                placeholder_start = placeholder_value.clone(); println!("output: {}", output);
                 let var_name = placeholder_value.replace("#each ", "");
                 if !placeholders.contains_key(&var_name) {
                     return xml_content
@@ -288,10 +288,6 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
 
     output = remove_paragraph_with_placeholder(&output, placeholder_start.as_str());
     output = remove_paragraph_with_placeholder(&output, "{{/each}}");
-    if output.is_empty()
-    {
-     xml_content
-    } else {
-        output
-    }
+    println!("output: {}", output);
+    output
 }
