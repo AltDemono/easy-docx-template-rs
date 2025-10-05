@@ -190,23 +190,29 @@ pub fn init_placeholders(placeholders: &mut HashMap<String, Value>, content: &St
     result_str
 }
 
-
-
 pub fn remove_paragraph_with_placeholder(xml_content: &str, placeholder: &str) -> String {
-    let re = Regex::new(r"<w:p[\s\S]*?</w:p>").unwrap();
+    let re_paragraph = Regex::new(r"(?s)<w:p\b.*?</w:p>").unwrap(); // (?s) включает многострочный режим
 
-    re.replace_all(xml_content, |caps: &regex::Captures| {
-        let paragraph = &caps[0];
+    let re_text = Regex::new(r"(?s)<w:t[^>]*>(.*?)</w:t>").unwrap();
 
-        let text_only = Regex::new(r"<[^>]+>").unwrap().replace_all(paragraph, "");
+    re_paragraph
+        .replace_all(xml_content, |caps: &regex::Captures| {
+            let paragraph = &caps[0];
 
-        if text_only.contains(placeholder) {
-            "".to_string()
-        } else {
-            paragraph.to_string()
-        }
-    }).to_string()
+            let mut combined_text = String::new();
+            for text_cap in re_text.captures_iter(paragraph) {
+                combined_text.push_str(&text_cap[1]);
+            }
+
+            if combined_text.contains(placeholder) {
+                String::new()
+            } else {
+                paragraph.to_string()
+            }
+        })
+        .to_string()
 }
+
 
 pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<String, Value>) -> String {
     let mut in_for: bool = false;
@@ -230,7 +236,7 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
                 placeholder_value = placeholder_value.replace("{}", "");
             }
             if placeholder_value.starts_with("{{#each ") {
-                placeholder_start = placeholder_value.clone(); println!("output: {}", output);
+                placeholder_start = placeholder_value.clone();
                 let var_name = placeholder_value.replace("#each ", "");
                 if !placeholders.contains_key(&var_name) {
                     return xml_content
@@ -288,6 +294,5 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
 
     output = remove_paragraph_with_placeholder(&output, placeholder_start.as_str());
     output = remove_paragraph_with_placeholder(&output, "{{/each}}");
-    println!("output: {}", output);
     output
 }
