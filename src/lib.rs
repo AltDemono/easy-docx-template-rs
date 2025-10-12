@@ -112,6 +112,7 @@ mod tests {
                       ]
                     }
                   ],
+                "options": ["okak", "bubu"],
                 "down": "made with love"
             }
         }"#);

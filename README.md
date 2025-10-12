@@ -6,7 +6,8 @@ Create docx templates
 ## ⚡Install to your project
 `cargo add easy-docx-template`
 
-## Changelog 0.2.3v
+## Changelog 0.2.4v
+* Added {{value}} placeholders for default arrays ["1", "2", "3"]
 * Added Each internal blocks
 
 ```

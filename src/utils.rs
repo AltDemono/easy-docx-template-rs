@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::env::var;
 use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Write};
 use quick_xml::events::{BytesText, Event};
@@ -212,7 +211,7 @@ pub fn remove_paragraph_with_each(xml_content: &str) -> String {
         }
     });
 
-    let re_each_inline = Regex::new(r"\{\{#each\s+[^}]+\}\}|\{\{\/each\}\}").unwrap();
+    let re_each_inline = Regex::new(r"\{\{#each\s+[^}]+}\}|\{\{\/each\}\}").unwrap();
     re_each_inline.replace_all(&cleaned, "").to_string()
 }
 
@@ -259,20 +258,32 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
                     if variable.is_array() {
                         if let Some(arr) = variable.as_array() {
                             let mut current_index = 1;
-                            for item in arr {
-                                let mut block_copy = in_block_content.clone();
-                                let mut block_placeholders: HashMap<String, Value> = HashMap::new();
-                                if let Some(map) = item.as_object() {
-                                    for (k, v) in map {
-                                        let ph = format!("{{{{{}}}}}", k);
-                                        block_placeholders.insert(ph.clone(), v.clone());
-                                        block_copy = block_copy.replace(&ph, &v.to_string().replace('"', ""));
+                            match &arr[0] {
+                                Value::Object(_) => {
+                                    for item in arr {
+                                        let mut block_copy = in_block_content.clone();
+                                        let mut block_placeholders: HashMap<String, Value> = HashMap::new();
+                                        if let Some(map) = item.as_object() {
+                                            for (k, v) in map {
+                                                let ph = format!("{{{{{}}}}}", k);
+                                                block_placeholders.insert(ph.clone(), v.clone());
+                                                block_copy = block_copy.replace(&ph, &v.to_string().replace('"', ""));
+                                            }
+                                        }
+                                        block_copy = init_each_placeholders(block_copy, &mut block_placeholders, true);
+                                        block_copy = block_copy.replace("{{@index}}", format!("{}", current_index).as_str());
+                                        output.push_str(&block_copy);
+                                        current_index += 1;
                                     }
-                                }
-                                block_copy = init_each_placeholders(block_copy, &mut block_placeholders, true);
-                                block_copy = block_copy.replace("{{@index}}", format!("{}", current_index).as_str());
-                                output.push_str(&block_copy);
-                                current_index += 1;
+                                },
+                                _ => {
+                                    for item in arr {
+                                        let mut block_copy = in_block_content.clone();
+                                        block_copy = block_copy.replace("{{@index}}", format!("{}", current_index).as_str()).replace("{{value}}", item.as_str().get_or_insert_default());
+                                        output.push_str(&block_copy);
+                                        current_index += 1;
+                                    }
+                                },
                             }
                         }
                     }
