@@ -6,8 +6,18 @@ Create docx templates
 ## ⚡Install to your project
 `cargo add easy-docx-template`
 
-## Changelog 0.1.5v
-* Added @index placeholder to each blocks
+## Changelog 0.2.3v
+* Added Each internal blocks
+
+```
+{{#each exam.users}}
+{{@index}}. {{name}} has {{#each pets}} {{type}} {{/each}}
+{{/each}}
+  |
+ \ /
+ 1. Alice has dog
+ 2. Peter has cat
+```
 ## Placeholder Helpers
 `get array len: {{#exam.nums}} -> 3`
 

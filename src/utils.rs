@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env::var;
 use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Write};
 use quick_xml::events::{BytesText, Event};
@@ -190,83 +191,93 @@ pub fn init_placeholders(placeholders: &mut HashMap<String, Value>, content: &St
     result_str
 }
 
-pub fn remove_paragraph_with_placeholder(xml_content: &str, placeholder: &str) -> String {
-    let re_paragraph = Regex::new(r"(?s)<w:p\b.*?</w:p>").unwrap(); // (?s) включает многострочный режим
 
+pub fn remove_paragraph_with_each(xml_content: &str) -> String {
+    let re_paragraph = Regex::new(r"(?s)<w:p\b.*?</w:p>").unwrap();
     let re_text = Regex::new(r"(?s)<w:t[^>]*>(.*?)</w:t>").unwrap();
 
-    re_paragraph
-        .replace_all(xml_content, |caps: &regex::Captures| {
-            let paragraph = &caps[0];
+    let cleaned = re_paragraph.replace_all(xml_content, |caps: &regex::Captures| {
+        let paragraph = &caps[0];
+        let mut combined_text = String::new();
+        for t in re_text.captures_iter(paragraph) {
+            combined_text.push_str(&t[1]);
+        }
+        let text_trimmed = combined_text.trim();
+        if text_trimmed.starts_with("{{#each ") && text_trimmed.ends_with("}}")
+            || text_trimmed == "{{/each}}"
+        {
+            String::new()
+        } else {
+            paragraph.to_string()
+        }
+    });
 
-            let mut combined_text = String::new();
-            for text_cap in re_text.captures_iter(paragraph) {
-                combined_text.push_str(&text_cap[1]);
-            }
-
-            if combined_text.contains(placeholder) {
-                String::new()
-            } else {
-                paragraph.to_string()
-            }
-        })
-        .to_string()
+    let re_each_inline = Regex::new(r"\{\{#each\s+[^}]+\}\}|\{\{\/each\}\}").unwrap();
+    re_each_inline.replace_all(&cleaned, "").to_string()
 }
 
+pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<String, Value>, recursive: bool) -> String {
+    // consts
+    const BLOCKED_SYMBOLS: [char; 4] = ['<', '>', '{', '}'];
 
-pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<String, Value>) -> String {
+    // global variables
     let mut in_for: bool = false;
+    let mut is_open: bool = false;
+
     let mut in_block_content: String = String::new();
     let mut variable: Value = Value::Array(Vec::new());
+    let mut placeholder_value: String = String::new();
+
+    let mut opened_blocks = 0;
+    let mut count: usize = 0;
+
     let mut output = String::new();
 
-    let blocked_symbols = vec!['<', '>', '{', '}'];
-    let mut count: usize = 0;
-    let mut placeholder_value: String = String::new();
-    let mut is_open: bool = false;
-    let mut placeholder_start = String::new();
-
+    // checking all letters in xml content
     for letter in xml_content.chars() {
-        if count == 2 {
-            if !blocked_symbols.contains(&letter) && is_open {
-                placeholder_value.push(letter);
-            }
-        } else if count == 0 && placeholder_value.ends_with("}}") {
+        if count == 2 && !BLOCKED_SYMBOLS.contains(&letter) && is_open { placeholder_value.push(letter) }
+        else if count == 0 && placeholder_value.ends_with("}}") {
             if placeholder_value.contains("{}") {
                 placeholder_value = placeholder_value.replace("{}", "");
             }
             if placeholder_value.starts_with("{{#each ") {
-                placeholder_start = placeholder_value.clone();
                 let var_name = placeholder_value.replace("#each ", "");
-                if !placeholders.contains_key(&var_name) {
+                if !placeholders.contains_key(&var_name) && opened_blocks == 0 {
                     return xml_content
                 }
-                variable = placeholders[&var_name].clone();
+                if opened_blocks == 0 {
+                    variable = placeholders[&var_name].clone();
+                    in_block_content.clear();
+                }
                 in_for = true;
-                in_block_content.clear();
+                opened_blocks+=1;
             } else if placeholder_value.starts_with("{{/each") {
-                in_for = false;
+                opened_blocks-=1;
+                if opened_blocks == 0 {
+                    in_for = false;
 
-                if variable.is_array() {
-                    if let Some(arr) = variable.as_array() {
-                        let mut current_index = 1;
-                        for item in arr {
-                            let mut block_copy = in_block_content.clone();
-                            let mut block_placeholders: HashMap<String, Value> = HashMap::new();
-                            block_placeholders.insert("{{@index}}".to_string(), Value::from(current_index));
-                            if let Some(map) = item.as_object() {
-                                for (k, v) in map {
-                                    let ph = format!("{{{{{}}}}}", k);
-                                    block_copy = block_copy.replace(&ph, &v.to_string().replace('"', ""));
+                    if variable.is_array() {
+                        if let Some(arr) = variable.as_array() {
+                            let mut current_index = 1;
+                            for item in arr {
+                                let mut block_copy = in_block_content.clone();
+                                let mut block_placeholders: HashMap<String, Value> = HashMap::new();
+                                if let Some(map) = item.as_object() {
+                                    for (k, v) in map {
+                                        let ph = format!("{{{{{}}}}}", k);
+                                        block_placeholders.insert(ph.clone(), v.clone());
+                                        block_copy = block_copy.replace(&ph, &v.to_string().replace('"', ""));
+                                    }
                                 }
+                                block_copy = init_each_placeholders(block_copy, &mut block_placeholders, true);
+                                block_copy = block_copy.replace("{{@index}}", format!("{}", current_index).as_str());
+                                output.push_str(&block_copy);
+                                current_index += 1;
                             }
-                            block_copy = block_copy.replace("{{@index}}", format!("{}", current_index).as_str());
-                            output.push_str(&block_copy);
-                            current_index += 1;
                         }
                     }
+                    in_block_content.clear();
                 }
-                in_block_content.clear();
             }
             placeholder_value.clear();
         }
@@ -291,8 +302,8 @@ pub fn init_each_placeholders(xml_content: String, placeholders: &mut HashMap<St
             _ => {}
         }
     }
-
-    output = remove_paragraph_with_placeholder(&output, placeholder_start.as_str());
-    output = remove_paragraph_with_placeholder(&output, "{{/each}}");
+    if !recursive {
+        output = remove_paragraph_with_each(&output);
+    }
     output
 }

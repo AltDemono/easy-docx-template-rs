@@ -78,7 +78,7 @@ impl DOCX {
     pub fn init_placeholders(&mut self) {
         let mut new_content = HashMap::new();
         self.placeholders = add_placeholder_helpers(&mut self.placeholders);
-        let rendered = init_each_placeholders(self.content["word/document.xml"].clone(), &mut self.placeholders);
+        let rendered = init_each_placeholders(self.content["word/document.xml"].clone(), &mut self.placeholders, false);
         self.content.remove("word/document.xml");
         self.content.insert("word/document.xml".to_string(), rendered);
         for (k, v) in &self.content {

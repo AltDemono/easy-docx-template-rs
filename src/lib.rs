@@ -30,7 +30,7 @@ mod tests {
                 "test1": "2424"
             }
         }"#);
-        
+
         // 4. Add image placeholder
         docx.add_image_placeholder("image1.jpeg", "example/replace_image1.png");
 
@@ -78,10 +78,40 @@ mod tests {
                 "title": "Math exam",
                 "subject": "math",
                 "image_subtitle": "Hello world!",
-                "users": [
-                    { "first": "Ivan", "last": "Ivanov" },
-                    { "first": "Petr", "last": "Petrov" }
-                ],
+                  "users": [
+                    {
+                      "name": "Alice",
+                      "age": 28,
+                      "pets": [
+                        {
+                          "type": "Cat",
+                          "name": "Misty",
+                          "toys": [
+                            { "title": "Ball" },
+                            { "title": "Mouse" }
+                          ]
+                        },
+                        {
+                          "type": "Dog",
+                          "name": "Rex",
+                          "toys": [
+                            { "title": "Bone" }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Bob",
+                      "age": 34,
+                      "pets": [
+                        {
+                          "type": "Fish",
+                          "name": "Nemo",
+                          "toys": []
+                        }
+                      ]
+                    }
+                  ],
                 "down": "made with love"
             }
         }"#);
